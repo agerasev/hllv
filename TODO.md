@@ -17,5 +17,6 @@
   - [ ] command-specific help
 
 + Testing
+  - [x] CLI
   - [ ] Temporary directories
   - [ ] Multiple instances of listeners
