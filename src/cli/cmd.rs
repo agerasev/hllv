@@ -1,17 +1,22 @@
-use std::{io, env, ops::RangeInclusive};
+use std::{
+    io,
+    ops::RangeInclusive,
+    path::{Path},
+    marker::PhantomData,
+};
 use indoc::indoc;
-use crate::{lib as hllv};
+use crate::api::{Api};
 
 pub const DEFAULT_ADDR: &'static str = "0.0.0.0";
 pub const DEFAULT_PORT: u16 = 4096; 
 
-pub trait Cmd {
+pub trait Cmd<A: Api> {
     fn name(&self) -> &'static str;
     fn help(&self) -> &'static str;
     fn args_count(&self) -> RangeInclusive<usize>;
 
-    fn run_unchecked(&self, args: &[&str]) -> io::Result<()>;
-    fn run(&self, args: &[&str]) -> io::Result<()> {
+    fn run_unchecked(&self, cwd: &Path, args: &[&str]) -> io::Result<()>;
+    fn run(&self, cwd: &Path, args: &[&str]) -> io::Result<()> {
         if args.len() < *self.args_count().start() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -24,7 +29,7 @@ pub trait Cmd {
                 format!("{}: too many arguments", self.name()),
             ));
         }
-        self.run_unchecked(args)
+        self.run_unchecked(cwd, args)
     }
 }
 
@@ -41,15 +46,15 @@ fn parse_addr(s: &str) -> io::Result<(&str, u16)> {
     Ok((addr, port))
 }
 
-pub struct New {
-
+pub struct New<A: Api> {
+    phantom: PhantomData<A>,
 }
-impl New {
+impl<A: Api> New<A> {
     pub fn new() -> Self {
-        Self {}
+        Self { phantom: PhantomData }
     }
 }
-impl Cmd for New {
+impl<A: Api> Cmd<A> for New<A> {
     fn name(&self) -> &'static str { "new" }
     fn help(&self) -> &'static str { indoc!("
         new <name> - creates new repository
@@ -58,20 +63,20 @@ impl Cmd for New {
     fn args_count(&self) -> RangeInclusive<usize> {
         1..=1
     }
-    fn run_unchecked(&self, args: &[&str]) -> io::Result<()> {
-        hllv::new(&env::current_dir()?, args[0])
+    fn run_unchecked(&self, cwd: &Path, args: &[&str]) -> io::Result<()> {
+        A::new(cwd, &Path::new(args[0]))
     }
 }
 
-pub struct Init {
-
+pub struct Init<A: Api> {
+    phantom: PhantomData<A>,
 }
-impl Init {
+impl<A: Api> Init<A> {
     pub fn new() -> Self {
-        Self {}
+        Self { phantom: PhantomData }
     }
 }
-impl Cmd for Init {
+impl<A: Api> Cmd<A> for Init<A> {
     fn name(&self) -> &'static str { "init" }
     fn help(&self) -> &'static str { indoc!("
         init - initialize new repository in the current directory
@@ -79,20 +84,20 @@ impl Cmd for Init {
     fn args_count(&self) -> RangeInclusive<usize> {
         0..=0
     }
-    fn run_unchecked(&self, _args: &[&str]) -> io::Result<()> {
-        hllv::init(&env::current_dir()?)
+    fn run_unchecked(&self, cwd: &Path, _args: &[&str]) -> io::Result<()> {
+        A::init(cwd)
     }
 }
 
-pub struct Listen {
-
+pub struct Listen<A: Api> {
+    phantom: PhantomData<A>,
 }
-impl Listen {
+impl<A: Api> Listen<A> {
     pub fn new() -> Self {
-        Self {}
+        Self { phantom: PhantomData }
     }
 }
-impl Cmd for Listen {
+impl<A: Api> Cmd<A> for Listen<A> {
     fn name(&self) -> &'static str { "listen" }
     fn help(&self) -> &'static str { indoc!("
         listen [addr][:port] - listen for incoming push/pull requests
@@ -102,24 +107,24 @@ impl Cmd for Listen {
     fn args_count(&self) -> RangeInclusive<usize> {
         0..=1
     }
-    fn run_unchecked(&self, args: &[&str]) -> io::Result<()> {
+    fn run_unchecked(&self, cwd: &Path, args: &[&str]) -> io::Result<()> {
         let addr = match args.get(0) {
             Some(s) => parse_addr(s)?,
             None => (DEFAULT_ADDR, DEFAULT_PORT),
         };
-        hllv::listen(&env::current_dir()?, addr)
+        A::listen(cwd, addr)
     }
 }
 
-pub struct Push {
-
+pub struct Push<A: Api> {
+    phantom: PhantomData<A>,
 }
-impl Push {
+impl<A: Api> Push<A> {
     pub fn new() -> Self {
-        Self {}
+        Self { phantom: PhantomData }
     }
 }
-impl Cmd for Push {
+impl<A: Api> Cmd<A> for Push<A> {
     fn name(&self) -> &'static str { "push" }
     fn help(&self) -> &'static str { indoc!("
         push <addr>[:port] <name> - update remote repository with local changes
@@ -130,22 +135,22 @@ impl Cmd for Push {
     fn args_count(&self) -> RangeInclusive<usize> {
         2..=2
     }
-    fn run_unchecked(&self, args: &[&str]) -> io::Result<()> {
+    fn run_unchecked(&self, cwd: &Path, args: &[&str]) -> io::Result<()> {
         let addr = parse_addr(&args[0])?;
-        let name = args[1];
-        hllv::push(&env::current_dir()?, addr, name)
+        let name = Path::new(args[1]);
+        A::push(cwd, addr, name)
     }
 }
 
-pub struct Pull {
-
+pub struct Pull<A: Api> {
+    phantom: PhantomData<A>,
 }
-impl Pull {
+impl<A: Api> Pull<A> {
     pub fn new() -> Self {
-        Self {}
+        Self { phantom: PhantomData }
     }
 }
-impl Cmd for Pull {
+impl<A: Api> Cmd<A> for Pull<A> {
     fn name(&self) -> &'static str { "pull" }
     fn help(&self) -> &'static str { indoc!("
         pull <addr>[:port] <name> - retrieve updates from remote repository
@@ -156,9 +161,9 @@ impl Cmd for Pull {
     fn args_count(&self) -> RangeInclusive<usize> {
         2..=2
     }
-    fn run_unchecked(&self, args: &[&str]) -> io::Result<()> {
+    fn run_unchecked(&self, cwd: &Path, args: &[&str]) -> io::Result<()> {
         let addr = parse_addr(&args[0])?;
-        let name = args[1];
-        hllv::pull(&env::current_dir()?, addr, name)
+        let name = Path::new(args[1]);
+        A::pull(cwd, addr, name)
     }
 }
