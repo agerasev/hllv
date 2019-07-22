@@ -1,21 +1,9 @@
-mod fs;
-pub use fs::FsRepo;
+pub mod fsx;
 
-use std::{
-    io::{self, Read, Write},
-    path::Path,
-    net::{ToSocketAddrs},
-};
+mod db;
+mod repo;
 
-pub trait Repo {
-    fn new(path: &Path) -> io::Result<Self>;
-    fn open(path: &Path) -> io::Result<Self>;
-    fn path(&self) -> &Path;
+#[cfg(test)]
+mod test;
 
-    fn push<W: Write>(&mut self, stream: W) -> io::Result<()>;
-    fn pull<R: Read>(&mut self, stream: R) -> io::Result<()>;
-}
-
-pub trait Manager {
-    fn listen<A: ToSocketAddrs>(&mut self, addr: A, path: &Path) -> io::Result<()>;
-}
+pub use repo::Repo;

@@ -1,11 +1,14 @@
-//mod repo;
+mod repo;
+
 mod api;
 mod cli;
+
 
 use std::{
     env,
     process::exit,
 };
+
 
 fn main() {
     let cwd = env::current_dir().unwrap();

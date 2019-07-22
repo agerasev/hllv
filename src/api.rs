@@ -2,6 +2,7 @@ use std::{
     io,
     path::Path,
 };
+use crate::repo::Repo;
 
 pub trait Api {
     fn new(cwd: &Path, path: &Path) -> io::Result<()>;
@@ -15,10 +16,10 @@ pub trait Api {
 pub enum MainApi {}
 impl Api for MainApi {
     fn new(cwd: &Path, path: &Path) -> io::Result<()> {
-        unimplemented!()
+        Repo::new(&cwd.join(path)).map(|_| ())
     }
     fn init(cwd: &Path) -> io::Result<()> {
-        unimplemented!()
+        Repo::new(cwd).map(|_| ())
     }
 
     fn listen(cwd: &Path, addr: (&str, u16)) -> io::Result<()> {
