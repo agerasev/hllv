@@ -1,4 +1,4 @@
-# HLLV
+# HLLV :rocket:
 
 [![Crates.io][crates_badge]][crates]
 [![Docs.rs][docs_badge]][docs]

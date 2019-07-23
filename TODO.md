@@ -1,14 +1,14 @@
 # TODO
 
 + Base functionality:
-  - [ ] `new` and `init`
+  - [x] `new` and `init`
   - [ ] `listen` mode
   - [ ] `push` to and `pull` from remote
 
 + Repository
   - [ ] index
-  - [ ] history
-  - [ ] genesis block
+  - [ ] commits and history
+  - [ ] genesis commit
   - [ ] pool for orphaned files
 
 + CLI
@@ -18,5 +18,5 @@
 
 + Testing
   - [x] CLI
-  - [ ] Temporary directories
+  - [x] Temporary directories
   - [ ] Multiple instances of listeners
